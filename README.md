@@ -1,13 +1,13 @@
-Validatino
+Validtino
 ==========
 
-Validatino was created in order to provide a simple way to validate structs in go.  Inspired by the validator provided by Hibernate, Validatino uses struct field tags to provide an easy way to define any struct field with an appropriate validator.
+Validtino was created in order to provide a simple way to validate structs in go.  Inspired by the validator provided by Hibernate, Validtino uses struct field tags to provide an easy way to define any struct field with an appropriate validator.
 
 In addition to the built in validators, it is easy to create and use your own!  Following the example below, all you need to do is create your validator type and use it as a recevier to your validator methods.  
 
 Validator methods can contain any number of parameters that are required, but the first parameter will always contain the candidate (value of the struct field) that will be tested.  Order will matter (except in the case of keywords) of the parameters, so the method signature should match the signature when you apply the validator.  For example, the Range validator will take a min and max value.  So, the defined method will have parameters: candidate, min, max.
 
-To register your validators with Validatino, pass them in as an array -- simple as that.
+To register your validators with Validtino, pass them in as an array -- simple as that.
 
 Calling the Validate method on your struct var will run each valid validator defined on the fields.  It will return whether the struct passed or failed, and if there were any errors.  
 
