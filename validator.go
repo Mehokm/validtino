@@ -1,4 +1,4 @@
-package validatino
+package validtino
 
 import (
 	"regexp"
