@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"validatino"
+	"validtino"
 )
 
 type TestStruct struct {
@@ -23,10 +23,10 @@ func (tv TestValidator) MyTester(candidate interface{}) bool {
 func main() {
 	tsFail := TestStruct{"Hello", "", 1, 3, "root", "This should fail because MyTester validator returns false"}
 
-	var myVal validatino.Validator
+	var myVal validtino.Validator
 	var myTestVal TestValidator
 
-	val := validatino.NewValidation([]interface{}{myVal, myTestVal})
+	val := validtino.NewValidation([]interface{}{myVal, myTestVal})
 
 	passed, errors := val.Validate(tsFail)
 	if !passed && len(errors) > 0 {
