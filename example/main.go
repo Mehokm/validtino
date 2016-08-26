@@ -1,8 +1,21 @@
 package main
 
-import "validtino"
+import (
+	"fmt"
+	"validtino"
+)
+
+type Test struct {
+	A string `valid:"NotEmpty"`
+	B string
+}
 
 func main() {
-	var i interface{}
-	validtino.Validate(&i)
+	t := Test{"I am not empty", "Also not empty, but don't care"}
+
+	errs := validtino.Validate(&t)
+
+	if len(errs) > 0 {
+		fmt.Println(errs)
+	}
 }

@@ -2,6 +2,7 @@ package validtino
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"regexp"
 	"sync"
@@ -34,10 +35,6 @@ func init() {
 	RegisterValidator(newVal())
 }
 
-func Validate(i interface{}) bool {
-	return true
-}
-
 func RegisterValidator(v interface{}) error {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -63,6 +60,49 @@ func RegisterValidatorFunc(name string, f ValidatorFunc) {
 	defer mutex.Unlock()
 
 	validatorMap[name] = f
+}
+
+// Validate will validate struct fields which have the valid tag and with
+// corressponding validator
+func Validate(s interface{}) []error {
+	var errs []error
+
+	sv := reflect.ValueOf(s)
+
+	if sv.Kind() != reflect.Ptr {
+		return append(errs, errors.New("candidate must be ptr"))
+	}
+
+	if sv.Elem().Kind() != reflect.Struct {
+		return append(errs, errors.New("candidate must be of type struct"))
+	}
+
+	fields := getStructFields(sv)
+
+	fmt.Println(fields)
+
+	return errs
+}
+
+func getStructFields(sv reflect.Value) []reflect.Value {
+	var fields []reflect.Value
+
+	numFields := sv.Elem().NumField()
+	for i := 0; i < numFields; i++ {
+		field := sv.Elem().Field(i)
+		tag := sv.Elem().Type().Field(i).Tag.Get("valid")
+
+		if tag == "" {
+			continue
+		}
+
+		validatorName := tag
+
+		fmt.Println(field)
+		fmt.Println(validatorName)
+	}
+
+	return fields
 }
 
 // type Validation struct {
