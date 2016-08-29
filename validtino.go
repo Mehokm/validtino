@@ -1,109 +1,106 @@
 package validtino
 
 import (
-	"errors"
-	"fmt"
-	"reflect"
 	"regexp"
 	"sync"
 )
 
 var (
-	validatorMap map[string]ValidatorFunc
-	rName, _     = regexp.Compile(`[A-Za-z]+`)
-	rParam, _    = regexp.Compile(`\([A-Za-z0-9,=' ]+\)`)
-	mutex        sync.RWMutex
+	// validatorMap map[string]ValidatorFunc
+	rName, _  = regexp.Compile(`[A-Za-z]+`)
+	rParam, _ = regexp.Compile(`\([A-Za-z0-9,=' ]+\)`)
+	mutex     sync.RWMutex
 )
 
-type Params struct {
-	params map[string]interface{}
+type Validator struct {
+	Name      string
+	Func      ValidatorFunc
+	ParamType interface{}
 }
 
-func (p Params) Get(index string) interface{} {
-	if v, ok := p.params[index]; ok {
-		return v
-	}
-
-	return nil
-}
-
-type ValidatorFunc func(candidate interface{}, params Params) bool
+type ValidatorFunc func(candidate interface{}, params interface{}) bool
 
 func init() {
-	validatorMap = make(map[string]ValidatorFunc)
-
-	RegisterValidator(newVal())
+	// validatorMap = make(map[string]ValidatorFunc)
 }
 
-func RegisterValidator(v interface{}) error {
+// func RegisterValidator(v interface{}) error {
+// 	mutex.Lock()
+// 	defer mutex.Unlock()
+//
+// 	rv := reflect.ValueOf(v)
+// 	if rv.Kind() != reflect.Struct {
+// 		return errors.New("validator must be of type struct")
+// 	}
+//
+// 	numFields := rv.NumField()
+// 	for i := 0; i < numFields; i++ {
+// 		name := rv.Type().Field(i).Name
+// 		funcVal := rv.Field(i).Interface().(ValidatorFunc)
+//
+// 		validatorMap[name] = funcVal
+// 	}
+//
+// 	return nil
+// }
+
+func RegisterValidator(val Validator) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	rv := reflect.ValueOf(v)
-	if rv.Kind() != reflect.Struct {
-		return errors.New("validator must be of type struct")
-	}
-
-	numFields := rv.NumField()
-	for i := 0; i < numFields; i++ {
-		name := rv.Type().Field(i).Name
-		funcVal := rv.Field(i).Interface().(ValidatorFunc)
-
-		validatorMap[name] = funcVal
-	}
-
-	return nil
-}
-
-func RegisterValidatorFunc(name string, f ValidatorFunc) {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	validatorMap[name] = f
 }
 
 // Validate will validate struct fields which have the valid tag and with
 // corressponding validator
-func Validate(s interface{}) []error {
-	var errs []error
+// func Validate(s interface{}) []error {
+// 	var errs []error
+//
+// 	sv := reflect.ValueOf(s)
+//
+// 	if sv.Kind() != reflect.Ptr {
+// 		return append(errs, errors.New("candidate must be ptr"))
+// 	}
+//
+// 	if sv.Elem().Kind() != reflect.Struct {
+// 		return append(errs, errors.New("candidate must be of type struct"))
+// 	}
+//
+// 	cands := getCandidates(sv)
+//
+// 	for k, v := range cands {
+// 		fmt.Println(k, v)
+// 	}
+//
+// 	return errs
+// }
 
-	sv := reflect.ValueOf(s)
-
-	if sv.Kind() != reflect.Ptr {
-		return append(errs, errors.New("candidate must be ptr"))
-	}
-
-	if sv.Elem().Kind() != reflect.Struct {
-		return append(errs, errors.New("candidate must be of type struct"))
-	}
-
-	fields := getStructFields(sv)
-
-	fmt.Println(fields)
-
-	return errs
-}
-
-func getStructFields(sv reflect.Value) []reflect.Value {
-	var fields []reflect.Value
-
-	numFields := sv.Elem().NumField()
-	for i := 0; i < numFields; i++ {
-		field := sv.Elem().Field(i)
-		tag := sv.Elem().Type().Field(i).Tag.Get("valid")
-
-		if tag == "" {
-			continue
-		}
-
-		validatorName := tag
-
-		fmt.Println(field)
-		fmt.Println(validatorName)
-	}
-
-	return fields
-}
+// func getValidatorParams(s string) Params {
+// 	m := make(map[string]interface{})
+//
+// 	list := strings.Split(strings.TrimSpace(s), ",")
+//
+// 	fmt.Println(list)
+//
+// 	return Params{m}
+// }
+//
+// func getCandidates(sv reflect.Value) map[string]interface{} {
+// 	cands := make(map[string]interface{})
+//
+// 	numFields := sv.Elem().NumField()
+// 	for i := 0; i < numFields; i++ {
+// 		field := sv.Elem().Field(i)
+// 		tag := sv.Elem().Type().Field(i).Tag.Get("valid")
+//
+// 		if tag == "" {
+// 			continue
+// 		}
+//
+// 		cands[tag] = field.Interface()
+// 	}
+//
+// 	return cands
+// }
 
 // type Validation struct {
 // 	validators []interface{}
