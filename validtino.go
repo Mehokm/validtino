@@ -137,8 +137,7 @@ func getProperties(sv reflect.Value) []property {
 			}
 
 			vNames = append(vNames, vName)
-			tParams := strings.Split(strings.Trim(rParam.FindString(v), "()"), ",")
-			vParams = append(vParams, tParams)
+			vParams = append(vParams, strings.Split(strings.Trim(rParam.FindString(v), "()"), ","))
 		}
 
 		prop := property{
