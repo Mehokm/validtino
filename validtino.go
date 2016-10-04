@@ -81,6 +81,8 @@ func Validate(s interface{}) []error {
 }
 
 func setParamType(prop property) {
+	// at some point, check if val param is single quoted for a string.
+	// otherwise it should be ignored or set to zero val
 	for k, vName := range prop.validatorNames {
 		val := validatorMap[vName]
 

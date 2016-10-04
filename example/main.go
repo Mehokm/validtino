@@ -26,6 +26,7 @@ func main() {
 		ParamType: NumParamType{},
 		Func: func(candidate interface{}, t interface{}) bool {
 			param := t.(NumParamType)
+			fmt.Println(param.Num)
 			switch candidate.(type) {
 			case int:
 				return candidate.(int) >= param.Num
