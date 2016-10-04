@@ -62,6 +62,8 @@ func Validate(s interface{}) []error {
 	props := getProperties(sv)
 
 	for _, prop := range props {
+		// add check to see if this is necessary.  They might want to define this
+		// way upstream
 		setParamType(prop)
 
 		for _, vName := range prop.validatorNames {
