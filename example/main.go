@@ -2,43 +2,64 @@ package main
 
 import (
 	"fmt"
-	"reflect"
 	"unicode/utf8"
 	"validtino"
 )
 
 type Test struct {
-	A string `valid:"NotEmpty"`
+	A string `valid:"Min(5)"`
 	B string
-	C int `valid:"Min(3)"`
+	C int `valid:"Min(3); Range(4, 9)"`
 }
 
-type MinParamType struct {
-	Min int
+type NumParamType struct {
+	Num int
+}
+
+type RangeParamType struct {
+	Low, High int
 }
 
 func main() {
-	v := validtino.Validator{
-		Name: "min",
+	v := &validtino.Validator{
+		Name:      "Min",
+		ParamType: NumParamType{},
 		Func: func(candidate interface{}, t interface{}) bool {
-			param := t.(*MinParamType)
+			param := t.(NumParamType)
 			switch candidate.(type) {
 			case int:
-				return candidate.(int) >= param.Min
+				return candidate.(int) >= param.Num
 			case string:
-				return utf8.RuneCountInString(candidate.(string)) >= param.Min
+				return utf8.RuneCountInString(candidate.(string)) >= param.Num
 			default:
 				return false
 			}
 		},
-		ParamType: new(MinParamType),
 	}
 
-	pt := reflect.ValueOf(v.ParamType).Elem()
+	v2 := &validtino.Validator{
+		Name:      "Range",
+		ParamType: RangeParamType{},
+		Func: func(candidate interface{}, t interface{}) bool {
+			param := t.(RangeParamType)
+			switch candidate.(type) {
+			case int:
+				return candidate.(int) >= param.Low && candidate.(int) <= param.High
+			case string:
+				return utf8.RuneCountInString(candidate.(string)) >= param.Low &&
+					utf8.RuneCountInString(candidate.(string)) <= param.High
+			default:
+				return false
+			}
+		},
+	}
 
-	pt.Field(0).SetInt(10)
+	t := Test{"hello", "bye", 2}
 
-	b := v.Func(11, v.ParamType)
+	validtino.RegisterValidator(v)
+	validtino.RegisterValidator(v2)
 
-	fmt.Println(b)
+	errs := validtino.Validate(&t)
+
+	fmt.Println(errs)
 }
