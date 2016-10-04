@@ -10,6 +10,9 @@ import (
 	"sync"
 )
 
+// need to add some sort of cache/tree/map to alieveate bunches of reflection
+// add ability to preregister structs to add to map and do reflection at runtime
+// if not preregister, then add to cache/tree/map for future updates
 var (
 	validatorMap map[string]*Validator
 	rName, _     = regexp.Compile(`[A-Za-z]+`)
@@ -144,6 +147,8 @@ func getProperties(sv reflect.Value) []property {
 			vParams = append(vParams, strings.Split(strings.Trim(rParam.FindString(v), "()"), ","))
 		}
 
+		// will need to update this code when cache comes into play
+		// need another way to get/set value for a cached struct prop
 		prop := property{
 			name:            tField.Name,
 			value:           field.Interface(),
