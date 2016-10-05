@@ -22,7 +22,7 @@ func main() {
 	validtino.RegisterValidator(validtino.NewNotEmptyValidator())
 	validtino.RegisterValidator(validtino.NewContainsValidator())
 
-	// validtino.RegisterStruct(&Test{})
+	validtino.RegisterStruct(&Test{})
 
 	start := time.Now()
 	errs := validtino.Validate(&t)

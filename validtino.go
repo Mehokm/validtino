@@ -10,10 +10,10 @@ import (
 	"sync"
 )
 
-// need to add some sort of cache/tree/map to alieveate bunches of reflection
-// add ability to preregister structs to add to map and do reflection at runtime
-// if not preregister, then add to cache/tree/map for future updates
+// probably should have a UseDefualtValidators func to load the built-in/come with validators
+
 var (
+	useCache       bool
 	validatorMap   map[string]*Validator
 	structMap      map[string][]*property
 	allowedTypeMap map[reflect.Kind]bool
@@ -38,6 +38,7 @@ type property struct {
 }
 
 func init() {
+	useCache = false
 	validatorMap = make(map[string]*Validator)
 	structMap = make(map[string][]*property)
 	allowedTypeMap = map[reflect.Kind]bool{
@@ -69,6 +70,13 @@ func init() {
 	}
 }
 
+func EnableCache() {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	useCache = true
+}
+
 // RegisterValidator allows a user to register a validator to use with validtino
 func RegisterValidator(val *Validator) {
 	mutex.Lock()
@@ -91,10 +99,7 @@ func RegisterStruct(s interface{}) error {
 		return errors.New("validtino: candidate must be of type struct")
 	}
 
-	props := getProperties(sv)
-	key := getKey(sv)
-
-	structMap[key] = props
+	structMap[getKey(sv)] = getProperties(sv)
 
 	return nil
 }
@@ -124,6 +129,11 @@ func Validate(s interface{}) []error {
 
 	if props, ok = structMap[key]; !ok {
 		props = getProperties(sv)
+
+		// add this to structMap if we want to use caching
+		if useCache {
+			structMap[key] = props
+		}
 	}
 
 	updatePropertyValues(sv, props)
@@ -247,8 +257,6 @@ func getProperties(sv reflect.Value) []*property {
 			}
 		}
 
-		// will need to update this code when cache comes into play
-		// need another way to get/set value for a cached struct prop
 		prop := &property{
 			name:            tField.Name,
 			validatorNames:  vNames,
