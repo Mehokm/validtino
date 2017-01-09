@@ -10,8 +10,6 @@ import (
 	"sync"
 )
 
-// probably should have a UseDefualtValidators func to load the built-in/come with validators
-
 var (
 	useCache       bool
 	validatorMap   map[string]*Validator
@@ -22,8 +20,12 @@ var (
 	mutex          sync.RWMutex
 )
 
+// ValidatorFunc is the type of func that will be used to validate in your validator
 type ValidatorFunc func(candidate interface{}, paramType interface{}) bool
 
+// Validator is the type that is required to register a validator.  Name is the name of the validator - it matches the string in the tag
+// Func is the function that is called to do the validation
+// ParamType is required for mapping your validator parameters to your validator func
 type Validator struct {
 	Name      string
 	Func      ValidatorFunc
@@ -68,8 +70,15 @@ func init() {
 		reflect.Struct:        false,
 		reflect.UnsafePointer: false,
 	}
+
+	RegisterValidator(NewContainsValidator())
+	RegisterValidator(NewNotEmptyValidator())
+	RegisterValidator(NewMinValidator())
+	RegisterValidator(NewNumRangeValidator())
 }
 
+// EnableCache will allow you to cache the structs that you will be validating against
+// Using RegisterStruct has a similar effect, but it happens at start time
 func EnableCache() {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -85,6 +94,7 @@ func RegisterValidator(val *Validator) {
 	validatorMap[val.Name] = val
 }
 
+// RegisterStruct will speed up reflection for struct validation since it happened at start time
 func RegisterStruct(s interface{}) error {
 	mutex.Lock()
 	defer mutex.Unlock()

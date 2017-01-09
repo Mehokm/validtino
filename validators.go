@@ -6,14 +6,14 @@ import (
 )
 
 type NumParamType struct {
-	Num int
+	Number int
 }
 
 type StringParamType struct {
-	Str string
+	String string
 }
 
-type RangeParamType struct {
+type NumRangeParamType struct {
 	Low, High int
 }
 
@@ -27,7 +27,7 @@ func NewContainsValidator() *Validator {
 			case int:
 				return false
 			case string:
-				return strings.Contains(candidate.(string), s.Str)
+				return strings.Contains(candidate.(string), s.String)
 			default:
 				return false
 			}
@@ -59,11 +59,11 @@ func NewMinValidator() *Validator {
 			param := t.(NumParamType)
 			switch candidate.(type) {
 			case int:
-				return candidate.(int) >= param.Num
+				return candidate.(int) >= param.Number
 			case uint:
-				return candidate.(uint) >= uint(param.Num)
+				return candidate.(uint) >= uint(param.Number)
 			case string:
-				return utf8.RuneCountInString(candidate.(string)) >= param.Num
+				return utf8.RuneCountInString(candidate.(string)) >= param.Number
 			default:
 				return false
 			}
@@ -71,12 +71,12 @@ func NewMinValidator() *Validator {
 	}
 }
 
-func NewRangeValidator() *Validator {
+func NewNumRangeValidator() *Validator {
 	return &Validator{
-		Name:      "Range",
-		ParamType: RangeParamType{},
+		Name:      "NumRange",
+		ParamType: NumRangeParamType{},
 		Func: func(candidate interface{}, t interface{}) bool {
-			param := t.(RangeParamType)
+			param := t.(NumRangeParamType)
 			switch candidate.(type) {
 			case int:
 				return candidate.(int) >= param.Low && candidate.(int) <= param.High

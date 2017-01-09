@@ -9,18 +9,19 @@ import (
 type Test struct {
 	A string `valid:"Contains('he')"`
 	B string
-	C int    `valid:"Min(3); Range(4, 9)"`
+	C int    `valid:"Min(3); NumRange(4, 9)"`
 	D uint   `valid:"Min(7)"`
 	E string `valid:"NotEmpty"`
+	F string
+	G string `valid:"Contains('usi')"`
+	H string `valid:"NotEmpty"`
+	I string `valid:"Contains('wh')"`
+	J string `valid:"Contains('wo')"`
+	K string `valid:"NotEmpty"`
 }
 
 func main() {
-	t := Test{"hello", "bye", 2, uint(8), ""}
-
-	validtino.RegisterValidator(validtino.NewMinValidator())
-	validtino.RegisterValidator(validtino.NewRangeValidator())
-	validtino.RegisterValidator(validtino.NewNotEmptyValidator())
-	validtino.RegisterValidator(validtino.NewContainsValidator())
+	t := Test{"hello", "bye", 2, uint(8), "", "", "using", "s", "what", "work", ""}
 
 	validtino.RegisterStruct(&Test{})
 
