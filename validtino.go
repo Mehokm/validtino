@@ -15,7 +15,7 @@ var (
 	validatorMap   map[string]*Validator
 	structMap      map[string][]*property
 	allowedTypeMap map[reflect.Kind]bool
-	rName, _       = regexp.Compile(`[A-Za-z]+`)
+	rName, _       = regexp.Compile(`[A-Za-z0-9]+`)
 	rParam, _      = regexp.Compile(`\([A-Za-z0-9,=' ]+\)`)
 	mutex          sync.RWMutex
 )
