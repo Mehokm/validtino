@@ -3,15 +3,44 @@ Validtino
 
 Validtino was created in order to provide a simple way to validate structs in go.  Inspired by the validator provided by Hibernate, Validtino uses struct field tags to provide an easy way to define any struct field with an appropriate validator.
 
-In addition to the built in validators, it is easy to create and use your own!  Following the example below, all you need to do is create your validator type and use it as a recevier to your validator methods.  
+In addition to the built in validators, it is easy to create and use your own!  Following the example below, all you need to do is to create a \*Validator type with a Name, ParamType (the type you you use in your validator function), and Func (of ValidatorFunc type)
 
-Validator methods can contain any number of parameters that are required, but the first parameter will always contain the candidate (value of the struct field) that will be tested.  Order will matter (except in the case of keywords) of the parameters, so the method signature should match the signature when you apply the validator.  For example, the Range validator will take a min and max value.  So, the defined method will have parameters: candidate, min, max.
+The ValidatorFunc type will require two parameters, the candidate and the param type, and return bool.  The candidate and param type will be both of type interface{}.
 
-To register your validators with Validtino, pass them in as an array -- simple as that.
+The ParamType is required because it allows you to define a type that will be mapped to the parameters of the validator defined in the struct tag.  So as an example, the tag ````valid:NumRange(4, 9)"```` has the validator NumRange with parameters 4 and 9.
 
-Calling the Validate method on your struct var will run each valid validator defined on the fields.  It will return whether the struct passed or failed, and if there were any errors.  
+Now we will create a param type: 
+```go
+type NumRangeParamType struct {
+	Low, High int
+}
+```
+This param type will be used like so with out validator:
+```go
+&Validator{
+		Name:      "NumRange",
+		ParamType: NumRangeParamType{},
+		Func: func(candidate interface{}, t interface{}) bool {
+			param := t.(NumRangeParamType)
+			switch candidate.(type) {
+			case int:
+				return candidate.(int) >= param.Low && candidate.(int) <= param.High
+			case string:
+				return utf8.RuneCountInString(candidate.(string)) >= param.Low &&
+					utf8.RuneCountInString(candidate.(string)) <= param.High
+			default:
+				return false
+			}
+		},
+	}
+```
+So to finish up the example, the number 4 will be mapped to Low and 9 will be mapped to High.  You can then use those properties on your param type in your validation function
 
-As of now, there are only three supported keywords: include, exclude, and message.  Include will "include" whatever value set to it and pass if the field value equals that include value.  Exclude is the opposite, if the field value equals the exclude value then it will return false for that field validation.  Message is just a custom error message that you can defined for when field validation fails
+The param type will be specific to your validator, but you can use one to more than one validator if it satisfies the validator parameters.  You can name it whatever you want, becasue you will be type converting it from interface to your param type as in the above example.
+
+To register your validators with Validtino, you will use the RegisterValidator function.
+
+When calling Validate, you will get a slice of errors as the result.  If everything passed, the slice will be of len == 0; 
 
 Example Usage:
 ==============
@@ -21,37 +50,55 @@ package main
 
 import (
 	"fmt"
-	"validatino"
+	"strings"
+	"validtino"
 )
 
-type TestStruct struct {
-	StringNotEmpty string `valid:"NotEmpty"`
-	StringEmpty    string `valid:"NotEmpty"`
-	Size           int    `valid:"Min(2, message = 'This will be a custom message that will display')"`
-	Range          int    `valid:"Range(2, 10, exclude = 3)"`
-	Email          string `valid:"Email(include = root)"`
-	Tester         string `valid:"MyTester"`
+type Test struct {
+	A string `valid:"Contains('he')"`
+	B string
+	C int    `valid:"Min(3); NumRange(4, 9)"`
+	D uint   `valid:"Min(7)"`
+	E string `valid:"NotEmpty"`
+	F string
+	G string `valid:"Contains('usi')"`
+	H string `valid:"NotEmpty"`
+	I string `valid:"Contains('wh')"`
+	J string `valid:"Contains('wo')"`
+	K string `valid:"CustomVal('foo')"`
 }
 
-type TestValidator struct{}
-
-func (tv TestValidator) MyTester(candidate interface{}) bool {
-	return false
+type CustomValParamType struct {
+	String string
 }
 
 func main() {
-	tsFail := TestStruct{"Hello", "", 1, 3, "root", "This should fail because MyTester validator returns false"}
+	validtino.RegisterValidator(customVal())
 
-	var myVal validatino.Validator
-	var myTestVal TestValidator
+	t := Test{"hello", "bye", 2, uint(8), "", "", "using", "s", "what", "work", "bar"}
 
-	val := validatino.NewValidation([]interface{}{myVal, myTestVal})
+	errs := validtino.Validate(&t)
 
-	passed, errors := val.Validate(tsFail)
-	if !passed && len(errors) > 0 {
-		for _, err := range errors {
-			fmt.Println(err)
-		}
+	for _, err := range errs {
+		fmt.Println(err)
+	}
+}
+
+func customVal() *validtino.Validator {
+	return &validtino.Validator{
+		Name:      "CustomVal",
+		ParamType: CustomValParamType{},
+		Func: func(candidate interface{}, t interface{}) bool {
+			s := t.(CustomValParamType)
+			switch candidate.(type) {
+			case int:
+				return false
+			case string:
+				return strings.Contains(candidate.(string), s.String)
+			default:
+				return false
+			}
+		},
 	}
 }
 ```
@@ -59,8 +106,8 @@ func main() {
 This will produce the following output:
 
 ```
-field: 'StringEmpty' failed validation with value ''.
-field: 'Size' failed validation with value 1. 'This will be a custom message that will display'
-field: 'Range' failed validation with value 3.
-field: 'Tester' failed validation with value 'This should fail because MyTester validator returns false'.
+validtino: field 'C' failed validator 'Min' with value '2'
+validtino: field 'C' failed validator 'NumRange' with value '2'
+validtino: field 'E' failed validator 'NotEmpty' with value ''
+validtino: field 'K' failed validator 'CustomVal' with value 'bar'
 ```
