@@ -1,0 +1,91 @@
+package validtino
+
+import (
+	"strings"
+	"unicode/utf8"
+)
+
+type NumParamType struct {
+	Number int
+}
+
+type StringParamType struct {
+	String string
+}
+
+type NumRangeParamType struct {
+	Low, High int
+}
+
+func NewContainsValidator() *Validator {
+	return &Validator{
+		Name:      "Contains",
+		ParamType: StringParamType{},
+		Func: func(candidate interface{}, t interface{}) bool {
+			s := t.(StringParamType)
+			switch candidate.(type) {
+			case int:
+				return false
+			case string:
+				return strings.Contains(candidate.(string), s.String)
+			default:
+				return false
+			}
+		},
+	}
+}
+
+func NewNotEmptyValidator() *Validator {
+	return &Validator{
+		Name: "NotEmpty",
+		Func: func(candidate interface{}, t interface{}) bool {
+			switch candidate.(type) {
+			case int:
+				return candidate.(int) > 0
+			case string:
+				return utf8.RuneCountInString(candidate.(string)) > 0
+			default:
+				return false
+			}
+		},
+	}
+}
+
+func NewMinValidator() *Validator {
+	return &Validator{
+		Name:      "Min",
+		ParamType: NumParamType{},
+		Func: func(candidate interface{}, t interface{}) bool {
+			param := t.(NumParamType)
+			switch candidate.(type) {
+			case int:
+				return candidate.(int) >= param.Number
+			case uint:
+				return candidate.(uint) >= uint(param.Number)
+			case string:
+				return utf8.RuneCountInString(candidate.(string)) >= param.Number
+			default:
+				return false
+			}
+		},
+	}
+}
+
+func NewNumRangeValidator() *Validator {
+	return &Validator{
+		Name:      "NumRange",
+		ParamType: NumRangeParamType{},
+		Func: func(candidate interface{}, t interface{}) bool {
+			param := t.(NumRangeParamType)
+			switch candidate.(type) {
+			case int:
+				return candidate.(int) >= param.Low && candidate.(int) <= param.High
+			case string:
+				return utf8.RuneCountInString(candidate.(string)) >= param.Low &&
+					utf8.RuneCountInString(candidate.(string)) <= param.High
+			default:
+				return false
+			}
+		},
+	}
+}
