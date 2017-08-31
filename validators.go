@@ -1,6 +1,7 @@
 package validtino
 
 import (
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -83,6 +84,26 @@ func NewNumRangeValidator() *Validator {
 			case string:
 				return utf8.RuneCountInString(candidate.(string)) >= param.Low &&
 					utf8.RuneCountInString(candidate.(string)) <= param.High
+			default:
+				return false
+			}
+		},
+	}
+}
+
+func NewEmailValidator() *Validator {
+	return &Validator{
+		Name: "Email",
+		Func: func(candidate interface{}, t interface{}) bool {
+			switch candidate.(type) {
+			case string:
+				// regex from http://emailregex.com
+				valid, _ := regexp.MatchString(
+					"^(([^<>()\\[\\]\\.,;:\\s@\"]+(\\.[^<>()\\[\\]\\.,;:\\s@\"]+)*)|(\".+\"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$",
+					candidate.(string),
+				)
+
+				return valid
 			default:
 				return false
 			}

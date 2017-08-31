@@ -27,6 +27,10 @@ type TestParamType struct {
 	B int
 }
 
+type TestEmailStruct struct {
+	Email string `valid:"Email"`
+}
+
 func TestRegisterValidator(t *testing.T) {
 	// given
 	val := getTestVal()
@@ -46,7 +50,7 @@ func TestRegisterStruct(t *testing.T) {
 	RegisterStruct(&s)
 
 	// then
-	assert.NotEmpty(t, structMap["validtino.TestStruct"])
+	assert.NotEmpty(t, structMap)
 }
 
 func TestRegisterStruct_mustBePtr(t *testing.T) {
@@ -163,6 +167,33 @@ func TestValidate_ignoresUnregisteredValidator(t *testing.T) {
 
 	// then
 	assert.Equal(t, len(errs), 0)
+}
+
+func TestValidateEmail_validatesCorrectly_whenValid(t *testing.T) {
+	// given
+	RegisterValidator(NewEmailValidator())
+
+	s := TestEmailStruct{"bob@boblaw.com"}
+
+	// when
+	errs := Validate(&s)
+
+	// then
+	assert.Equal(t, len(errs), 0)
+}
+
+func TestValidateEmail_validatesCorrectly_whenInvalid(t *testing.T) {
+	// given
+	RegisterValidator(NewEmailValidator())
+
+	s := TestEmailStruct{"bob@boblaw.c"}
+
+	// when
+	errs := Validate(&s)
+
+	// then
+	assert.Equal(t, len(errs), 1)
+	assert.Error(t, errs[0], "validtino: field 'Email' failed validator 'Email' with value 'bob@boblaw.c'")
 }
 
 func getTestVal() *Validator {

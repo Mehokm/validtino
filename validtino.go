@@ -75,6 +75,7 @@ func init() {
 	RegisterValidator(NewNotEmptyValidator())
 	RegisterValidator(NewMinValidator())
 	RegisterValidator(NewNumRangeValidator())
+	RegisterValidator(NewEmailValidator())
 }
 
 // EnableCache will allow you to cache the structs that you will be validating against
@@ -208,7 +209,7 @@ func setParamType(prop *property) {
 				}
 				ptField.SetFloat(p)
 			case reflect.String, reflect.Interface:
-				// check to see if value is single quoted so syntax sake
+				// check to see if value is single quoted for syntax sake
 				// if it is not, set it to empty string
 				// if it is, then remove the single quote
 
