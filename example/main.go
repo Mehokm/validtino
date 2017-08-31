@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"time"
-	"validtino"
+
+	"github.com/Mehokm/validtino"
 )
 
 type Test struct {

@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	useCache       bool
 	validatorMap   map[string]*Validator
 	structMap      map[string][]*property
 	allowedTypeMap map[reflect.Kind]bool
@@ -40,7 +39,6 @@ type property struct {
 }
 
 func init() {
-	useCache = false
 	validatorMap = make(map[string]*Validator)
 	structMap = make(map[string][]*property)
 	allowedTypeMap = map[reflect.Kind]bool{
@@ -76,15 +74,6 @@ func init() {
 	RegisterValidator(NewMinValidator())
 	RegisterValidator(NewNumRangeValidator())
 	RegisterValidator(NewEmailValidator())
-}
-
-// EnableCache will allow you to cache the structs that you will be validating against
-// Using RegisterStruct has a similar effect, but it happens at start time
-func EnableCache() {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	useCache = true
 }
 
 // RegisterValidator allows a user to register a validator to use with validtino
@@ -140,11 +129,6 @@ func Validate(s interface{}) []error {
 
 	if props, ok = structMap[key]; !ok {
 		props = getProperties(sv)
-
-		// add this to structMap if we want to use caching
-		if useCache {
-			structMap[key] = props
-		}
 	}
 
 	updatePropertyValues(sv, props)
@@ -157,8 +141,9 @@ func Validate(s interface{}) []error {
 		for _, vName := range prop.validatorNames {
 			val := validatorMap[vName]
 			passed := val.Func(prop.value, val.ParamType)
+
 			if !passed {
-				// check validator for custom message.  This could be the default
+				// check validator for custom message.  This could be the default (not implemented yet)
 				err := fmt.Errorf("validtino: field '%v' failed validator '%v' with value '%v'", prop.name, val.Name, prop.value)
 				errs = append(errs, err)
 			}
@@ -224,6 +209,7 @@ func setParamType(prop *property) {
 				ptField.SetString(param)
 			}
 		}
+
 		val.ParamType = ptCopy.Interface()
 	}
 }
