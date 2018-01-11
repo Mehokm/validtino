@@ -24,7 +24,7 @@ type Test struct {
 func main() {
 	t := Test{"hello", "bye", 2, uint(8), "", "", "using", "s", "what", "work", ""}
 
-	validtino.RegisterStruct(&Test{})
+	validtino.RegisterStruct(&t)
 
 	start := time.Now()
 	errs := validtino.Validate(&t)

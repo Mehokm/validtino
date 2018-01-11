@@ -1,6 +1,7 @@
 package validtino
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -196,13 +197,76 @@ func TestValidateEmail_validatesCorrectly_whenInvalid(t *testing.T) {
 	assert.Error(t, errs[0], "validtino: field 'Email' failed validator 'Email' with value 'bob@boblaw.c'")
 }
 
+func BenchmarkValidate(b *testing.B) {
+	b.StopTimer()
+
+	RegisterValidator(getTestVal())
+
+	s := TestStruct{Foo: 1}
+
+	b.StartTimer()
+
+	for n := 0; n < b.N; n++ {
+		Validate(&s)
+	}
+}
+
+func BenchmarkValidate_registerStruct(b *testing.B) {
+	b.StopTimer()
+
+	RegisterValidator(getTestVal())
+
+	s := TestStruct{Foo: 1}
+
+	RegisterStruct(&s)
+
+	b.StartTimer()
+
+	for n := 0; n < b.N; n++ {
+		Validate(&s)
+	}
+}
+
+func BenchmarkFunc_setParamType(b *testing.B) {
+	b.StopTimer()
+
+	prop := &property{
+		name:            "TestProp",
+		value:           10,
+		validatorNames:  []string{"Test"},
+		validatorParams: [][]string{[]string{"4", "19"}},
+	}
+
+	b.StartTimer()
+
+	for n := 0; n < b.N; n++ {
+		setParamType(prop)
+	}
+}
+
+func BenchmarkFunc_getProperties(b *testing.B) {
+	b.StopTimer()
+
+	s := TestStruct{Foo: 1}
+
+	sv := reflect.ValueOf(&s)
+
+	b.StartTimer()
+
+	for n := 0; n < b.N; n++ {
+		getProperties(sv)
+	}
+}
+
 func getTestVal() *Validator {
 	return &Validator{
 		Name:      "Test",
-		ParamType: TestParamType{},
+		ParamType: &TestParamType{},
 		Func: func(candidate interface{}, paramType interface{}) bool {
-			p := paramType.(TestParamType)
-			return (candidate.(int) >= p.A && candidate.(int) <= p.B)
+			p := paramType.(*TestParamType)
+			c := candidate.(int)
+
+			return c >= p.A && c <= p.B
 		},
 	}
 }

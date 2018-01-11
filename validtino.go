@@ -14,13 +14,12 @@ var (
 	validatorMap   map[string]*Validator
 	structMap      map[string][]*property
 	allowedTypeMap map[reflect.Kind]bool
-	rName, _       = regexp.Compile(`[A-Za-z0-9]+`)
 	rParam, _      = regexp.Compile(`\([A-Za-z0-9,=' ]+\)`)
-	mutex          sync.RWMutex
+	mutex          = &sync.Mutex{}
 )
 
 // ValidatorFunc is the type of func that will be used to validate in your validator
-type ValidatorFunc func(candidate interface{}, paramType interface{}) bool
+type ValidatorFunc func(candidate, paramType interface{}) bool
 
 // Validator is the type that is required to register a validator.  Name is the name of the validator - it matches the string in the tag
 // Func is the function that is called to do the validation
@@ -118,7 +117,9 @@ func Validate(s interface{}) []error {
 		return append(errs, errors.New("validtino: candidate must be ptr"))
 	}
 
-	if sv.Elem().Kind() != reflect.Struct {
+	sve := sv.Elem()
+
+	if sve.Kind() != reflect.Struct {
 		return append(errs, errors.New("validtino: candidate must be of type struct"))
 	}
 
@@ -131,9 +132,9 @@ func Validate(s interface{}) []error {
 		props = getProperties(sv)
 	}
 
-	updatePropertyValues(sv, props)
-
 	for _, prop := range props {
+		prop.value = sve.FieldByName(prop.name).Interface()
+
 		if len(prop.validatorParams) > 0 {
 			setParamType(prop)
 		}
@@ -144,7 +145,7 @@ func Validate(s interface{}) []error {
 
 			if !passed {
 				// check validator for custom message.  This could be the default (not implemented yet)
-				err := fmt.Errorf("validtino: field '%v' failed validator '%v' with value '%v'", prop.name, val.Name, prop.value)
+				err := fmt.Errorf("validtino: field '%s' failed validator '%s' with value '%v'", prop.name, val.Name, prop.value)
 				errs = append(errs, err)
 			}
 		}
@@ -157,11 +158,11 @@ func setParamType(prop *property) {
 	for k, vName := range prop.validatorNames {
 		val := validatorMap[vName]
 
-		ptCopy := reflect.New(reflect.TypeOf(val.ParamType)).Elem()
+		ptv := reflect.ValueOf(val.ParamType).Elem()
 
-		numFields := ptCopy.NumField()
+		numFields := ptv.NumField()
 		for i := 0; i < numFields; i++ {
-			ptField := ptCopy.Field(i)
+			ptField := ptv.Field(i)
 			param := prop.validatorParams[k][i]
 
 			switch ptField.Kind() {
@@ -198,10 +199,7 @@ func setParamType(prop *property) {
 				// if it is not, set it to empty string
 				// if it is, then remove the single quote
 
-				i := strings.Index(param, "'")
-				ii := strings.LastIndex(param, "'")
-
-				if i != 0 || ii != len(param)-1 {
+				if param[0] != 39 || param[len(param)-1] != 39 {
 					param = ""
 				} else {
 					param = param[1 : len(param)-1]
@@ -209,22 +207,20 @@ func setParamType(prop *property) {
 				ptField.SetString(param)
 			}
 		}
-
-		val.ParamType = ptCopy.Interface()
 	}
 }
 
 func getProperties(sv reflect.Value) []*property {
 	var props []*property
 
-	se := sv.Elem()
-	numFields := se.NumField()
+	sve := sv.Elem()
+	numFields := sve.NumField()
 	for i := 0; i < numFields; i++ {
-		if !allowedTypeMap[se.Field(i).Kind()] {
+		if !allowedTypeMap[sve.Field(i).Kind()] {
 			continue
 		}
 
-		tField := se.Type().Field(i)
+		tField := sve.Type().Field(i)
 
 		tag := tField.Tag.Get("valid")
 
@@ -238,7 +234,7 @@ func getProperties(sv reflect.Value) []*property {
 		var vParams [][]string
 
 		for _, v := range valTags {
-			vName := rName.FindString(v)
+			vName := getValidatorName(v)
 
 			if _, ok := validatorMap[vName]; !ok {
 				continue
@@ -249,7 +245,7 @@ func getProperties(sv reflect.Value) []*property {
 			rawParams := rParam.FindString(v)
 
 			if rawParams != "" {
-				tParams := strings.Split(strings.Trim(rawParams, "()"), ",")
+				tParams := strings.Split(rawParams[1:len(rawParams)-1], ",")
 				vParams = append(vParams, tParams)
 			}
 		}
@@ -266,12 +262,18 @@ func getProperties(sv reflect.Value) []*property {
 	return props
 }
 
-func updatePropertyValues(sv reflect.Value, props []*property) {
-	for _, prop := range props {
-		prop.value = sv.Elem().FieldByName(prop.name).Interface()
-	}
+func getKey(sv reflect.Value) string {
+	sve := sv.Elem()
+
+	return sve.Type().PkgPath() + "." + sve.Type().Name()
 }
 
-func getKey(sv reflect.Value) string {
-	return fmt.Sprintf("%v.%v", sv.Elem().Type().PkgPath(), sv.Elem().Type().Name())
+func getValidatorName(s string) string {
+	i := strings.Index(s, "(")
+
+	if i >= 0 {
+		return s[:i]
+	}
+
+	return s
 }

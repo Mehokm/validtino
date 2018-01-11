@@ -21,9 +21,9 @@ type NumRangeParamType struct {
 func NewContainsValidator() *Validator {
 	return &Validator{
 		Name:      "Contains",
-		ParamType: StringParamType{},
+		ParamType: &StringParamType{},
 		Func: func(candidate interface{}, t interface{}) bool {
-			s := t.(StringParamType)
+			s := t.(*StringParamType)
 			switch candidate.(type) {
 			case int:
 				return false
@@ -55,9 +55,9 @@ func NewNotEmptyValidator() *Validator {
 func NewMinValidator() *Validator {
 	return &Validator{
 		Name:      "Min",
-		ParamType: NumParamType{},
+		ParamType: &NumParamType{},
 		Func: func(candidate interface{}, t interface{}) bool {
-			param := t.(NumParamType)
+			param := t.(*NumParamType)
 			switch candidate.(type) {
 			case int:
 				return candidate.(int) >= param.Number
@@ -75,9 +75,9 @@ func NewMinValidator() *Validator {
 func NewNumRangeValidator() *Validator {
 	return &Validator{
 		Name:      "NumRange",
-		ParamType: NumRangeParamType{},
+		ParamType: &NumRangeParamType{},
 		Func: func(candidate interface{}, t interface{}) bool {
-			param := t.(NumRangeParamType)
+			param := t.(*NumRangeParamType)
 			switch candidate.(type) {
 			case int:
 				return candidate.(int) >= param.Low && candidate.(int) <= param.High
